@@ -106,8 +106,8 @@ with st.sidebar:
     # Sección de archivos
     st.subheader("📁 Archivos")
     
-    portada_file = st.file_uploader("Template Portada (PNG)", type=['png'], key='portada')
-    contraportada_file = st.file_uploader("Template Contraportada (PNG)", type=['png'], key='contraportada')
+    portada_file = st.file_uploader("Plantilla Portada (PNG)", type=['png'], key='portada')
+    contraportada_file = st.file_uploader("Plantilla Contraportada (PNG)", type=['png'], key='contraportada')
     csv_file = st.file_uploader("Archivo CSV con datos", type=['csv'], key='csv')
     
     output_dir = st.text_input("Directorio de salida", value="diplomas_generados")
