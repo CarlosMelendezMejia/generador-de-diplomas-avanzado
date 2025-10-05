@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import os
+import shutil
+import zipfile
+from datetime import datetime
 from diploma_generator import DiplomaGenerator
 
 # Configuración de la página
@@ -50,6 +53,51 @@ def draw_preview_with_coords(image, coords_dict, texts_dict):
         draw.text((x+15, y-15), label, fill='red')
     
     return img_copy
+
+# Función para limpiar directorio de salida
+def limpiar_directorio_salida(output_dir):
+    """Elimina todos los archivos generados previamente"""
+    try:
+        if os.path.exists(output_dir):
+            # Eliminar todo el contenido del directorio
+            shutil.rmtree(output_dir)
+        # Recrear los directorios
+        os.makedirs(f"{output_dir}/png", exist_ok=True)
+        os.makedirs(f"{output_dir}/pdf", exist_ok=True)
+        return True
+    except Exception as e:
+        st.error(f"Error al limpiar directorio: {e}")
+        return False
+
+# Función para crear archivo ZIP con los diplomas
+def crear_zip_diplomas(output_dir):
+    """Crea un archivo ZIP con todos los diplomas generados"""
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_filename = f"diplomas_{timestamp}.zip"
+        zip_path = os.path.join(output_dir, zip_filename)
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Agregar todos los PDFs
+            pdf_dir = os.path.join(output_dir, 'pdf')
+            if os.path.exists(pdf_dir):
+                for filename in os.listdir(pdf_dir):
+                    if filename.endswith('.pdf'):
+                        file_path = os.path.join(pdf_dir, filename)
+                        zipf.write(file_path, os.path.join('pdf', filename))
+            
+            # Agregar todos los PNGs
+            png_dir = os.path.join(output_dir, 'png')
+            if os.path.exists(png_dir):
+                for filename in os.listdir(png_dir):
+                    if filename.endswith('.png'):
+                        file_path = os.path.join(png_dir, filename)
+                        zipf.write(file_path, os.path.join('png', filename))
+        
+        return zip_path
+    except Exception as e:
+        st.error(f"Error al crear ZIP: {e}")
+        return None
 
 # Sidebar para configuración
 with st.sidebar:
@@ -286,6 +334,13 @@ with tab4:
         
         if generate_btn:
             try:
+                # Limpiar diplomas anteriores para no desbordar la memoria
+                with st.spinner('🗑️ Limpiando diplomas anteriores...'):
+                    if not limpiar_directorio_salida(output_dir):
+                        st.error("No se pudo limpiar el directorio. Abortando generación.")
+                        st.stop()
+                    st.success("✅ Directorio limpiado correctamente")
+                
                 # Guardar archivos temporalmente
                 os.makedirs("temp", exist_ok=True)
                 
@@ -366,6 +421,27 @@ with tab4:
                     status_text.text("¡Completado!")
                 
                 st.success(f"✅ ¡{total} diplomas generados exitosamente!")
+                
+                # Crear archivo ZIP con todos los diplomas
+                with st.spinner('📦 Creando archivo ZIP para descarga...'):
+                    zip_path = crear_zip_diplomas(output_dir)
+                    
+                    if zip_path and os.path.exists(zip_path):
+                        st.success("✅ Archivo ZIP creado correctamente")
+                        
+                        # Botón de descarga del ZIP
+                        with open(zip_path, 'rb') as f:
+                            st.download_button(
+                                label="📥 Descargar todos los diplomas (ZIP)",
+                                data=f,
+                                file_name=os.path.basename(zip_path),
+                                mime="application/zip",
+                                type="primary",
+                                use_container_width=True
+                            )
+                    else:
+                        st.error("❌ No se pudo crear el archivo ZIP")
+                
                 st.balloons()
                 
                 # Mostrar ubicación de archivos
