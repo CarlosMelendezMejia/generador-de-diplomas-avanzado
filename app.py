@@ -110,6 +110,9 @@ with st.sidebar:
     contraportada_file = st.file_uploader("Plantilla Contraportada (PNG)", type=['png'], key='contraportada')
     csv_file = st.file_uploader("Archivo CSV con datos", type=['csv'], key='csv')
     
+    st.markdown("**Fuente personalizada (opcional)**")
+    font_file = st.file_uploader("Fuente para el nombre (TTF)", type=['ttf', 'otf'], key='font_file', help="Si no cargas nada, se usará MeaCulpa-Regular.ttf por defecto")
+    
     output_dir = st.text_input("Directorio de salida", value="diplomas_generados")
     
     st.markdown("---")
@@ -326,6 +329,12 @@ with tab4:
         if csv_file and st.session_state.df is not None:
             st.info(f"📄 {len(st.session_state.df)} diplomas para generar")
         st.info(f"📁 Guardar en: `{output_dir}/`")
+        
+        # Mostrar qué fuente se usará
+        if font_file is not None:
+            st.info(f"🔤 Fuente: {font_file.name}")
+        else:
+            st.info("🔤 Fuente: MeaCulpa-Regular.ttf (por defecto)")
     
     st.markdown("---")
     
@@ -357,11 +366,23 @@ with tab4:
                 with open(csv_path, "wb") as f:
                     f.write(csv_file.getbuffer())
                 
+                # Guardar fuente personalizada si fue cargada
+                font_path = None
+                if font_file is not None:
+                    font_path = "temp/custom_font.ttf"
+                    with open(font_path, "wb") as f:
+                        f.write(font_file.getbuffer())
+                    st.info(f"🔤 Usando fuente personalizada: {font_file.name}")
+                else:
+                    # Usar la fuente por defecto
+                    font_path = "MeaCulpa-Regular.ttf"
+                    st.info("🔤 Usando fuente por defecto: MeaCulpa-Regular.ttf")
+                
                 # Crear generador
                 generator = DiplomaGenerator(portada_path, contraportada_path, output_dir)
                 
                 # Aplicar personalizaciones de colores y fuentes
-                generator.set_font_config('nombre', size=nombre_size, color=hex_to_rgb(nombre_color))
+                generator.set_font_config('nombre', size=nombre_size, color=hex_to_rgb(nombre_color), font_name=font_path)
                 generator.set_font_config('folio', size=folio_size, color=hex_to_rgb(folio_color))
                 generator.set_font_config('modulos', size=modulos_size, color=hex_to_rgb(modulos_color))
                 generator.set_font_config('total_horas', size=total_size, color=hex_to_rgb(total_color))
