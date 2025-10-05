@@ -31,38 +31,62 @@ class DiplomaGenerator:
         
         # CONFIGURACIÓN PARA EL NOMBRE
         self.nombre_config = {
-            'size': 95,  # Tamaño de fuente para el nombre
-            #'color': (0, 63, 136),  # Color RGB Diplomado IA
-            'color': (10, 98, 126),  # Color RGB Diplomado Innovación
-            'font_name': 'MeaCulpa-Regular.ttf'  # Nombre del archivo de fuente
+            'size': 95,
+            'color': (10, 98, 126),
+            'font_name': 'MeaCulpa-Regular.ttf'
         }
         
         # CONFIGURACIÓN PARA EL FOLIO
         self.folio_config = {
-            'size': 24,  # Tamaño de fuente para el folio
-            'color': (150, 150, 150),  # Color RGB
-            'font_name': 'Poppins-Regular.ttf'  # Nombre del archivo de fuente
+            'size': 24,
+            'color': (150, 150, 150),
+            'font_name': 'Poppins-Regular.ttf'
         }
         
-        # CONFIGURACIÓN PARA MÓDULOS Y HORAS (comparten configuración)
+        # CONFIGURACIÓN PARA MÓDULOS Y HORAS
         self.modulos_config = {
-            'size': 18,  # Tamaño de fuente para módulos y horas
-            'color': (64, 64, 64),  # Color RGB (gris oscuro por defecto)
-            'font_name': 'Poppins-Regular.ttf'  # Nombre del archivo de fuente
+            'size': 18,
+            'color': (64, 64, 64),
+            'font_name': 'Poppins-Regular.ttf'
         }
         
         # CONFIGURACIÓN PARA EL TOTAL DE HORAS
         self.total_horas_config = {
-            'size': 18,  # Tamaño de fuente para el total de horas
-            'color': (0, 0, 0),  # Color RGB (negro por defecto)
-            'font_name': 'Poppins-Regular.ttf'  # Nombre del archivo de fuente
+            'size': 18,
+            'color': (0, 0, 0),
+            'font_name': 'Poppins-Regular.ttf'
         }
 
         # CONFIGURACIÓN PARA EL PROMEDIO FINAL
         self.promedio_final_config = {
-            'size': 18,  # Tamaño de fuente para el promedio final
-            'color': (0, 0, 0),  # Color RGB (negro por defecto)
-            'font_name': 'Poppins-Regular.ttf'  # Nombre del archivo de fuente
+            'size': 18,
+            'color': (0, 0, 0),
+            'font_name': 'Poppins-Regular.ttf'
+        }
+        
+        # ============================================================
+        # CONFIGURACIÓN DE COORDENADAS - PORTADA
+        # ============================================================
+        self.portada_coords = {
+            'nombre_x': None,  # Se calculará como centro si es None
+            'nombre_y': None,  # Valor por defecto si es None
+            'folio_x': None,
+            'folio_y': None
+        }
+        
+        # ============================================================
+        # CONFIGURACIÓN DE COORDENADAS - CONTRAPORTADA
+        # ============================================================
+        self.contraportada_coords = {
+            'mod_base_x': 870,
+            'mod_base_y': 450,
+            'calif_base_x': 1100,
+            'calif_base_y': 450,
+            'incremento_y': 120,
+            'total_x': 870,
+            'total_y': 930,
+            'promedio_x': 1030,
+            'promedio_y': 930
         }
         
         # Cargar las fuentes con las configuraciones
@@ -77,12 +101,11 @@ class DiplomaGenerator:
     def get_system_font(self, font_name, size):
         """Intenta cargar una fuente del sistema, usa fuente por defecto si falla"""
         try:
-            # Rutas comunes de fuentes en diferentes sistemas
             font_paths = [
-                f"/System/Library/Fonts/{font_name}",  # macOS
-                f"/usr/share/fonts/truetype/dejavu/{font_name}",  # Linux
-                f"C:/Windows/Fonts/{font_name}",  # Windows
-                font_name  # Intenta cargar directamente
+                f"/System/Library/Fonts/{font_name}",
+                f"/usr/share/fonts/truetype/dejavu/{font_name}",
+                f"C:/Windows/Fonts/{font_name}",
+                font_name
             ]
             
             for path in font_paths:
@@ -91,7 +114,6 @@ class DiplomaGenerator:
                 except:
                     continue
             
-            # Si no encuentra ninguna fuente, usa la por defecto
             print(f"Advertencia: No se pudo cargar la fuente {font_name}, usando fuente por defecto")
             return ImageFont.load_default()
         except:
@@ -102,7 +124,7 @@ class DiplomaGenerator:
         Método para actualizar la configuración de fuentes programáticamente
         
         Args:
-            element (str): 'nombre', 'folio', 'modulos', o 'total_horas'
+            element (str): 'nombre', 'folio', 'modulos', 'total_horas', 'promedio_final'
             size (int): Tamaño de la fuente
             color (tuple): Color RGB como tupla (r, g, b)
             font_name (str): Nombre del archivo de fuente
@@ -131,13 +153,64 @@ class DiplomaGenerator:
         # Recargar la fuente con la nueva configuración
         self.fonts[element] = self.get_system_font(config['font_name'], config['size'])
     
-    def load_csv_data(self, csv_path):
+    def set_portada_coordinates(self, nombre_x=None, nombre_y=None, folio_x=None, folio_y=None):
         """
-        Carga los datos del CSV
+        Configura las coordenadas para la portada
         
-        Formato esperado del CSV (simplificado - solo calificaciones):
-        nombre,folio,modulo1_calificacion,modulo2_calificacion,modulo3_calificacion,modulo4_calificacion
+        Args:
+            nombre_x (int): Posición X para el nombre (se centra respecto a esta)
+            nombre_y (int): Posición Y para el nombre
+            folio_x (int): Posición X para el folio (se centra respecto a esta)
+            folio_y (int): Posición Y para el folio
         """
+        if nombre_x is not None:
+            self.portada_coords['nombre_x'] = nombre_x
+        if nombre_y is not None:
+            self.portada_coords['nombre_y'] = nombre_y
+        if folio_x is not None:
+            self.portada_coords['folio_x'] = folio_x
+        if folio_y is not None:
+            self.portada_coords['folio_y'] = folio_y
+    
+    def set_contraportada_coordinates(self, mod_base_x=None, mod_base_y=None, 
+                                     calif_base_x=None, calif_base_y=None,
+                                     incremento_y=None, total_x=None, total_y=None,
+                                     promedio_x=None, promedio_y=None):
+        """
+        Configura las coordenadas para la contraportada
+        
+        Args:
+            mod_base_x (int): X inicial para módulos (horas)
+            mod_base_y (int): Y inicial para módulos (horas)
+            calif_base_x (int): X inicial para calificaciones
+            calif_base_y (int): Y inicial para calificaciones
+            incremento_y (int): Incremento en Y entre módulos
+            total_x (int): X para total de horas
+            total_y (int): Y para total de horas
+            promedio_x (int): X para promedio final
+            promedio_y (int): Y para promedio final
+        """
+        if mod_base_x is not None:
+            self.contraportada_coords['mod_base_x'] = mod_base_x
+        if mod_base_y is not None:
+            self.contraportada_coords['mod_base_y'] = mod_base_y
+        if calif_base_x is not None:
+            self.contraportada_coords['calif_base_x'] = calif_base_x
+        if calif_base_y is not None:
+            self.contraportada_coords['calif_base_y'] = calif_base_y
+        if incremento_y is not None:
+            self.contraportada_coords['incremento_y'] = incremento_y
+        if total_x is not None:
+            self.contraportada_coords['total_x'] = total_x
+        if total_y is not None:
+            self.contraportada_coords['total_y'] = total_y
+        if promedio_x is not None:
+            self.contraportada_coords['promedio_x'] = promedio_x
+        if promedio_y is not None:
+            self.contraportada_coords['promedio_y'] = promedio_y
+    
+    def load_csv_data(self, csv_path):
+        """Carga los datos del CSV"""
         try:
             df = pd.read_csv(csv_path)
             return df
@@ -147,82 +220,76 @@ class DiplomaGenerator:
     
     def create_portada(self, nombre, folio, output_path):
         """
-        Genera la portada del diploma
+        Genera la portada del diploma con coordenadas configurables
         
         Args:
             nombre (str): Nombre del estudiante
             folio (str): Número de folio
             output_path (str): Ruta donde guardar la imagen
         """
-        # Abrir imagen template
         img = Image.open(self.portada_template)
         draw = ImageDraw.Draw(img)
-        
-        # Obtener dimensiones de la imagen
         width, height = img.size
         
-        # CONFIGURAR ESTAS POSICIONES SEGÚN TU PLANTILLA DE PORTADA
-        # =========================================================
-        # Posición Y para el nombre del estudiante (se centra automáticamente en X)
-        nombre_pos_y = height // 2 - 295  # Ajustar según tu plantilla
+        # Usar coordenadas configuradas o valores por defecto
+        nombre_pos_x = self.portada_coords['nombre_x'] if self.portada_coords['nombre_x'] is not None else width // 2
+        nombre_pos_y = self.portada_coords['nombre_y'] if self.portada_coords['nombre_y'] is not None else height // 2 - 295
+        folio_pos_x = self.portada_coords['folio_x'] if self.portada_coords['folio_x'] is not None else width // 2
+        folio_pos_y = self.portada_coords['folio_y'] if self.portada_coords['folio_y'] is not None else height // 2 - 150
         
-        # Posición Y para el folio (se centra automáticamente en X)
-        folio_pos_y = height // 2 - 150  # Ajustar según tu plantilla
+        folio_text = f"Folio: {folio}"
         
-        # Texto del folio - puedes cambiar el formato aquí
-        folio_text = f"Folio: {folio}"  # Cambiar formato si es necesario
-        
-        # Dibujar nombre (centrado horizontalmente) con color personalizado
+        # Dibujar nombre (centrado horizontalmente respecto a nombre_pos_x)
         nombre_bbox = draw.textbbox((0, 0), nombre, font=self.fonts['nombre'])
         nombre_width = nombre_bbox[2] - nombre_bbox[0]
-        nombre_x = (width - nombre_width) // 2
+        nombre_x = nombre_pos_x - (nombre_width // 2)
         draw.text((nombre_x, nombre_pos_y), nombre, 
                  fill=self.nombre_config['color'], 
                  font=self.fonts['nombre'])
         
-        # Dibujar folio (centrado horizontalmente) con color personalizado
+        # Dibujar folio (centrado horizontalmente respecto a folio_pos_x)
         folio_bbox = draw.textbbox((0, 0), folio_text, font=self.fonts['folio'])
         folio_width = folio_bbox[2] - folio_bbox[0]
-        folio_x = (width - folio_width) // 2
+        folio_x = folio_pos_x - (folio_width // 2)
         draw.text((folio_x, folio_pos_y), folio_text, 
                  fill=self.folio_config['color'], 
                  font=self.fonts['folio'])
         
-        # Guardar imagen
         img.save(output_path)
         print(f"Portada creada: {output_path}")
     
     def create_contraportada(self, datos_estudiante, output_path):
         """
-        Genera la contraportada del diploma con 30 horas fijas por módulo
+        Genera la contraportada del diploma con coordenadas configurables
         
         Args:
             datos_estudiante (dict): Diccionario con todos los datos del estudiante
             output_path (str): Ruta donde guardar la imagen
         """
-        # Abrir imagen template
         img = Image.open(self.contraportada_template)
         draw = ImageDraw.Draw(img)
 
-        # CONFIGURAR ESTAS POSICIONES SEGÚN TU PLANTILLA
-        pos_mod_base = (870, 450)
-        incremento = 120
+        # Usar coordenadas configuradas
+        coords = self.contraportada_coords
+        
+        # Calcular posiciones de módulos
+        horas_positions = {
+            f'modulo{i}': (coords['mod_base_x'], coords['mod_base_y'] + coords['incremento_y'] * (i - 1))
+            for i in range(1, 5)
+        }
+        
+        calificaciones_positions = {
+            f'modulo{i}': (coords['calif_base_x'], coords['calif_base_y'] + coords['incremento_y'] * (i - 1))
+            for i in range(1, 5)
+        }
 
-        horas_positions = {f'modulo{i}': (pos_mod_base[0], pos_mod_base[1] + incremento * (i - 1)) for i in range(1, 5)}
-        pos_calif_base = (1100, 450)
-        calificaciones_positions = {f'modulo{i}': (pos_calif_base[0], pos_calif_base[1] + incremento * (i - 1)) for i in range(1, 5)}
-
-        total_horas_position = (pos_mod_base[0], pos_mod_base[1] + incremento * 4 - 15)
-        promedio_final_position = (pos_mod_base[0] + 160, pos_mod_base[1] + incremento * 4 - 15)
-
-        # Procesar módulos con 30 horas fijas
+        # Procesar módulos
         calificaciones = []
         for i in range(1, 5):
-            # Siempre 30 horas por módulo
             horas_val = "30 horas"
             calif_val = datos_estudiante.get(f'modulo{i}_calificacion', '0')
             
-            # Dibujar horas (siempre 30)
+            # Dibujar horas
             draw.text(horas_positions[f'modulo{i}'], horas_val,
                       fill=self.modulos_config['color'], font=self.fonts['modulos'])
             
@@ -230,33 +297,25 @@ class DiplomaGenerator:
             draw.text(calificaciones_positions[f'modulo{i}'], str(calif_val),
                       fill=self.modulos_config['color'], font=self.fonts['modulos'])
             
-            # Agregar calificación a la lista para el promedio
             try:
                 calificaciones.append(float(calif_val))
             except ValueError:
                 pass
 
-        # Total de horas (4 módulos x 30 horas = 120 horas)
-        draw.text(total_horas_position, "120 horas",
+        # Total de horas
+        draw.text((coords['total_x'], coords['total_y']), "120 horas",
                   fill=self.total_horas_config['color'], font=self.fonts['total_horas'])
 
-        # Calcular y dibujar promedio final
+        # Promedio final
         promedio_final = "{:.2f}".format(sum(calificaciones) / len(calificaciones)) if calificaciones else "0.00"
-        draw.text(promedio_final_position, f"Promedio Final: {promedio_final}",
+        draw.text((coords['promedio_x'], coords['promedio_y']), f"Promedio Final: {promedio_final}",
                   fill=self.promedio_final_config['color'], font=self.fonts['promedio_final'])
 
         img.save(output_path)
         print(f"Contraportada creada: {output_path}")
     
     def create_pdf(self, portada_path, contraportada_path, output_pdf_path):
-        """
-        Convierte las imágenes PNG a un PDF con dos páginas
-        
-        Args:
-            portada_path (str): Ruta de la imagen de la portada
-            contraportada_path (str): Ruta de la imagen de la contraportada
-            output_pdf_path (str): Ruta donde guardar el PDF
-        """
+        """Convierte las imágenes PNG a un PDF con dos páginas"""
         try:
             from reportlab.lib.utils import ImageReader
             
@@ -279,13 +338,7 @@ class DiplomaGenerator:
             print(f"Error al crear PDF: {e}")
     
     def generate_diplomas(self, csv_path):
-        """
-        Genera todos los diplomas basados en los datos del CSV
-        
-        Args:
-            csv_path (str): Ruta del archivo CSV con los datos
-        """
-        # Cargar datos
+        """Genera todos los diplomas basados en los datos del CSV"""
         df = self.load_csv_data(csv_path)
         if df is None:
             return
@@ -294,23 +347,16 @@ class DiplomaGenerator:
         
         for index, row in df.iterrows():
             try:
-                # Obtener datos del estudiante
                 nombre = row['nombre']
-                folio = str(row['folio'])  # Convertir a string por si es numérico
+                folio = str(row['folio'])
                 
-                # Crear nombres de archivos
                 safe_name = "".join(c for c in nombre if c.isalnum() or c in (' ', '-', '_')).rstrip()
                 portada_png = f"{self.output_dir}/png/{safe_name}_portada.png"
                 contraportada_png = f"{self.output_dir}/png/{safe_name}_contraportada.png"
                 diploma_pdf = f"{self.output_dir}/pdf/{safe_name}_diploma.pdf"
                 
-                # Generar portada
                 self.create_portada(nombre, folio, portada_png)
-                
-                # Generar contraportada
                 self.create_contraportada(row.to_dict(), contraportada_png)
-                
-                # Generar PDF
                 self.create_pdf(portada_png, contraportada_png, diploma_pdf)
                 
                 print(f"Diploma completado para: {nombre}")
@@ -329,7 +375,6 @@ def main():
     
     args = parser.parse_args()
     
-    # Verificar que los archivos existan
     if not os.path.exists(args.csv):
         print(f"Error: No se encuentra el archivo CSV: {args.csv}")
         return
@@ -342,126 +387,8 @@ def main():
         print(f"Error: No se encuentra el template de contraportada: {args.contraportada}")
         return
     
-    # Crear generador y procesar diplomas
     generator = DiplomaGenerator(args.portada, args.contraportada, args.output)
-    
-    # ============================================================
-    # EJEMPLO DE PERSONALIZACIÓN DE COLORES Y TAMAÑOS
-    # ============================================================
-    # Puedes descomentar y modificar estas líneas para personalizar:
-    
-    # generator.set_font_config('nombre', size=60, color=(0, 0, 255))  # Nombre azul, tamaño 60
-    # generator.set_font_config('folio', size=28, color=(255, 0, 0))  # Folio rojo, tamaño 28
-    # generator.set_font_config('modulos', size=20, color=(0, 128, 0))  # Módulos verde, tamaño 20
-    # generator.set_font_config('total_horas', size=32, color=(128, 0, 128))  # Total púrpura, tamaño 32
-    
     generator.generate_diplomas(args.csv)
 
 if __name__ == "__main__":
     main()
-
-"""
-============================================================
-GUÍA DE USO Y CONFIGURACIÓN
-============================================================
-
-FORMATO DEL CSV (SIMPLIFICADO):
-===============================
-Ahora el CSV solo necesita las calificaciones, ya que las horas son fijas (30 por módulo):
-
-nombre,folio,modulo1_calificacion,modulo2_calificacion,modulo3_calificacion,modulo4_calificacion
-Juan Pérez,001,9.5,8.8,9.2,9.0
-María García,002,8.7,9.1,8.9,9.3
-Carlos López,003,9.2,9.5,8.5,9.8
-Ana Martínez,004,8.0,8.5,9.0,8.8
-
-INFORMACIÓN SOBRE LOS MÓDULOS:
-==============================
-- Cada módulo tiene exactamente 30 horas (fijo)
-- Total del diploma: 120 horas (4 módulos x 30 horas)
-- Solo se requieren las calificaciones en el CSV
-- El promedio final se calcula automáticamente
-
-CONFIGURACIÓN DE COLORES Y TAMAÑOS DE FUENTE:
-=============================================
-
-1. NOMBRE DEL ESTUDIANTE:
-   self.nombre_config = {
-       'size': 95,              # Tamaño de fuente
-       'color': (0, 63, 136),   # Color RGB - Azul oscuro
-       'font_name': 'MeaCulpa-Regular.ttf'
-   }
-
-2. FOLIO:
-   self.folio_config = {
-       'size': 24,              # Tamaño de fuente
-       'color': (150, 150, 150), # Color RGB - Gris
-       'font_name': 'Poppins-Regular.ttf'
-   }
-
-3. MÓDULOS (HORAS Y CALIFICACIONES):
-   self.modulos_config = {
-       'size': 18,              # Tamaño de fuente
-       'color': (64, 64, 64),   # Color RGB - Gris oscuro
-       'font_name': 'Poppins-Regular.ttf'
-   }
-
-4. TOTAL DE HORAS:
-   self.total_horas_config = {
-       'size': 18,              # Tamaño de fuente
-       'color': (0, 0, 0),      # Color RGB - Negro
-       'font_name': 'Poppins-Regular.ttf'
-   }
-
-5. PROMEDIO FINAL:
-   self.promedio_final_config = {
-       'size': 18,              # Tamaño de fuente
-       'color': (0, 0, 0),      # Color RGB - Negro
-       'font_name': 'Poppins-Regular.ttf'
-   }
-
-EJEMPLOS DE COLORES RGB:
-========================
-- Negro: (0, 0, 0)
-- Blanco: (255, 255, 255)
-- Rojo: (255, 0, 0)
-- Verde: (0, 255, 0)
-- Azul: (0, 0, 255)
-- Azul marino: (0, 0, 128)
-- Azul oscuro: (0, 63, 136)
-- Dorado: (255, 215, 0)
-- Plateado: (192, 192, 192)
-- Gris: (150, 150, 150)
-- Gris oscuro: (64, 64, 64)
-- Púrpura: (128, 0, 128)
-- Naranja: (255, 165, 0)
-
-INSTALACIÓN DE DEPENDENCIAS:
-============================
-pip install pillow pandas reportlab
-
-EJECUCIÓN:
-=========
-python diploma_generator.py --csv Innovacion_diplomas.csv --portada portada_template_innov.png --contraportada contraportada_template_innov.png --output diplomas_generados
-
-USO DESDE OTRO SCRIPT:
-=====================
-from diploma_generator import DiplomaGenerator
-
-# Crear generador
-gen = DiplomaGenerator("portada.png", "contraportada.png")
-
-# Personalizar colores y tamaños (opcional)
-gen.set_font_config('nombre', size=72, color=(255, 215, 0))  # Dorado grande
-gen.set_font_config('folio', size=24, color=(0, 0, 0))       # Negro pequeño
-
-# Generar diplomas
-gen.generate_diplomas("estudiantes.csv")
-
-NOTAS:
-======
-- Todos los módulos tienen 30 horas fijas
-- El total siempre será 120 horas
-- Solo se requieren las calificaciones en el CSV
-- El promedio se calcula automáticamente con 2 decimales
-"""
