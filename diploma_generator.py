@@ -261,6 +261,7 @@ class DiplomaGenerator:
     def create_contraportada(self, datos_estudiante, output_path):
         """
         Genera la contraportada del diploma con coordenadas configurables
+        Todos los elementos se centran respecto a las coordenadas especificadas
         
         Args:
             datos_estudiante (dict): Diccionario con todos los datos del estudiante
@@ -272,7 +273,7 @@ class DiplomaGenerator:
         # Usar coordenadas configuradas
         coords = self.contraportada_coords
         
-        # Calcular posiciones de módulos
+        # Calcular posiciones de módulos (coordenadas centrales)
         horas_positions = {
             f'modulo{i}': (coords['mod_base_x'], coords['mod_base_y'] + coords['incremento_y'] * (i - 1))
             for i in range(1, 5)
@@ -287,14 +288,22 @@ class DiplomaGenerator:
         calificaciones = []
         for i in range(1, 5):
             horas_val = "30 horas"
-            calif_val = datos_estudiante.get(f'modulo{i}_calificacion', '0')
+            calif_val = str(datos_estudiante.get(f'modulo{i}_calificacion', '0'))
             
-            # Dibujar horas
-            draw.text(horas_positions[f'modulo{i}'], horas_val,
+            # Dibujar horas (centrado horizontalmente)
+            horas_bbox = draw.textbbox((0, 0), horas_val, font=self.fonts['modulos'])
+            horas_width = horas_bbox[2] - horas_bbox[0]
+            horas_x = horas_positions[f'modulo{i}'][0] - (horas_width // 2)
+            horas_y = horas_positions[f'modulo{i}'][1]
+            draw.text((horas_x, horas_y), horas_val,
                       fill=self.modulos_config['color'], font=self.fonts['modulos'])
             
-            # Dibujar calificación
-            draw.text(calificaciones_positions[f'modulo{i}'], str(calif_val),
+            # Dibujar calificación (centrado horizontalmente)
+            calif_bbox = draw.textbbox((0, 0), calif_val, font=self.fonts['modulos'])
+            calif_width = calif_bbox[2] - calif_bbox[0]
+            calif_x = calificaciones_positions[f'modulo{i}'][0] - (calif_width // 2)
+            calif_y = calificaciones_positions[f'modulo{i}'][1]
+            draw.text((calif_x, calif_y), calif_val,
                       fill=self.modulos_config['color'], font=self.fonts['modulos'])
             
             try:
@@ -302,13 +311,21 @@ class DiplomaGenerator:
             except ValueError:
                 pass
 
-        # Total de horas
-        draw.text((coords['total_x'], coords['total_y']), "120 horas",
+        # Total de horas (centrado horizontalmente)
+        total_text = "120 horas"
+        total_bbox = draw.textbbox((0, 0), total_text, font=self.fonts['total_horas'])
+        total_width = total_bbox[2] - total_bbox[0]
+        total_x = coords['total_x'] - (total_width // 2)
+        draw.text((total_x, coords['total_y']), total_text,
                   fill=self.total_horas_config['color'], font=self.fonts['total_horas'])
 
-        # Promedio final
+        # Promedio final (centrado horizontalmente)
         promedio_final = "{:.2f}".format(sum(calificaciones) / len(calificaciones)) if calificaciones else "0.00"
-        draw.text((coords['promedio_x'], coords['promedio_y']), f"Promedio Final: {promedio_final}",
+        promedio_text = f"Promedio Final: {promedio_final}"
+        promedio_bbox = draw.textbbox((0, 0), promedio_text, font=self.fonts['promedio_final'])
+        promedio_width = promedio_bbox[2] - promedio_bbox[0]
+        promedio_x = coords['promedio_x'] - (promedio_width // 2)
+        draw.text((promedio_x, coords['promedio_y']), promedio_text,
                   fill=self.promedio_final_config['color'], font=self.fonts['promedio_final'])
 
         img.save(output_path)
